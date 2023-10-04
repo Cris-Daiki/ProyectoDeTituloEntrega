@@ -1,0 +1,402 @@
+{% extends './layout.html' %}
+
+{% block title%} Index {% endblock %}
+{% block head %}
+    <!-- <title>Porcentaje de Cambio</title> -->
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+{% block body %}
+<h1> Banco Santander</h1>
+<div class="container-fluid"  >
+    <div class="row">
+        <div class="col-lg-2 col-md-2 col-sm-12 testBorde" style="border-radius: 5px; display: flex;flex-direction: column;align-items: center;justify-content: center;" >
+            <form method="POST" action="/Descriptiva">
+                <div class = "testBorde">
+                    <div class="form-group" style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.3em;">
+                        <label for="start_date">Fecha de inicio:</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date_str }}" required>
+                    </div>
+                    <div class="form-group" style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.3em;">
+                        <label for="end_date">Fecha de Termino:</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date_str }}" required>
+                    </div>
+                    <div class="form-group" style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.3em;">
+                        <label for="chart_type">Tipo de gráfico:</label>
+                        <select class="form-control" id="chart_type" name="chart_type">
+                            <option value="candlestick" {% if chart_type == 'candlestick' %}selected{% endif %}>Velas japonesas</option>
+                            <option value="line"{% if chart_type == 'line' %}selected{% endif %}>Línea</option>
+                            <option value="barra"{% if chart_type == 'barra' %}selected{% endif %}>Barra</option>
+                        </select>
+                    </div>
+                </div>
+                <label style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.5em;">Opciones de indicadores:</label>
+                <div class="testBorde">
+
+                    <div class="form-check" style="font-family:Garamond, sans-serif;font-style: italic;">
+                        <label class="form-check-label">
+                            <input class="form-check-input" type="checkbox" name="indicators" value="sma">
+                            SMA
+                        </label>
+                    </div>
+                    <div class="form-check" style="font-family:Garamond, sans-serif;font-style: italic;">
+                        <label class="form-check-label">
+                            <input class="form-check-input" type="checkbox" name="indicators" value="ma">
+                            MA
+                        </label>
+                    </div>
+                    <div class="form-check" style="font-family:Garamond, sans-serif;font-style: italic;">
+                        <label class="form-check-label">
+                            <input class="form-check-input" type="checkbox" name="indicators" value="ema" >
+                            EMA
+                        </label>
+                    </div>
+                    <!-- <div class="form-check">
+                        <label class="form-check-label">
+                            <input class="form-check-input" type="checkbox" name="indicators" value="macd">
+                            MACD
+                        </label>
+                    </div> -->
+                    <div class="form-check" style="font-family:Garamond, sans-serif;font-style: italic;">
+                        <label class="form-check-label">
+                            <input class="form-check-input" type="checkbox" name="indicators" value="bb">
+                            BB
+                        </label>
+                    </div>
+                    <div class="form-check" style="font-family:Garamond, sans-serif;font-style: italic;">
+                        <label class="form-check-label">
+                            <input class="form-check-input" type="checkbox" name="indicators" value="stddev">
+                            stddev
+                        </label>
+                    </div>
+                </div>
+                <input type="submit" class="btn btn-outline-info" value="Generar Gráfico" style="margin-top: 1.5px;margin-bottom: 1.5px;">
+                <input type="submit" id="BorrarIndicadores" style="margin-top: 1.5px; margin-bottom: 1.5px;" name="BorrarIndicadores" class="btn btn-outline-danger" value="Borrar indicadores">
+            </form>
+            <div id="modalBorrar" class="modalBorrar" style="display: none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Confirmar Borrado</h2>
+                    <p>¿Estás seguro de que deseas borrar los indicadores?</p>
+                    <button id="confirmarBorrar">Sí</button>
+                    <button class="close">No</button>
+                </div>
+            </div>
+            <button id="btnConvertir" style="margin-top: 1.5px;margin-bottom: 1.5px;"class="btn btn-outline-warning" >Convertir Monedas</button>
+            <div id="modalConvertir" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2 >Convertir Monedas</h2>
+                    <form id="formConvertir" method="POST" action="{{ url_for('convertir') }}">
+                        
+                        <label for="cantidad">Cantidad:</label>
+                        <input type="number" id="cantidad" name="cantidad" required>
+                
+                        <label for="moneda_origen">Moneda de Origen:</label>
+                        <select id="moneda_origen" name="moneda_origen">
+                            <option value="USD"selected>USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="CLP">CLP</option>
+
+                        </select>
+                
+                        <label for="moneda_destino">Moneda de Destino:</label>
+                        <select id="moneda_destino" name="moneda_destino">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="CLP" selected>CLP</option>
+                        </select>
+                
+                        <input type="submit" value="Convertir">
+                    </form>
+                    <div id="resultado">
+                        {% if conversion %}
+                            <h3>Resultado de la conversión:</h3>
+                            <p>{{ conversion }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8 col-md-8 col-12">
+            <div class="h-100 testBorde" style="position: relative; width: 100%; border-radius: 4px;">
+                <div id="myPlot" style="position: relative; top: 0; left: 0; width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+        
+        <div class="col-lg-2 col-md-2 col-sm-12 testBorde" style="border-radius: 5px; align-items:stretch;" >
+            
+            <div id="porcentaje-div">
+                <h1 id="estimacion">Aumento / Disminución del Valor:</h1>
+                {% if porcentaje > 0 %}
+                    <p>El valor a Subido en:</p>
+                    <p class="subida">{{ porcentaje }}%</p>
+                    <p>En el rango de tiempo que has seleccionado el valor de Banco Santander a subido</p>
+                {% elif porcentaje < 0 %}
+                    <p>El valor a Bajado en:</p>
+                    <p class="bajada">{{ porcentaje }}%</p>
+                    <p>En el rango de tiempo que has seleccionado el valor de Banco Santander a bajado</p>
+                {% else %}
+                    <p>{{ porcentaje }}%</p>
+                {% endif %}
+            </div>
+            <div class=" InfybtnPrediccion" >
+                <button id="btnPrediccion" class="btn btn-outline-warning" >Predecir</button>
+            </div>
+            <div id="modalbtnPrediccion" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Formulario de predicción</h2>
+                    <form id="formPredecir" method="POST" >
+                        <h2>Para predecir se entrena con los datos en el rango de tiempo puesto inicialmente en el gráfico. Tienes 2 opciones: predecir el día siguiente o predecir 5 días.</h2>
+                        <div id="fecha_info" style="display: none;">
+                            <div class="form-group" style="font-family: Garamond, sans-serif; font-style: italic; font-size: 1.3em;">
+                                <label for="start_date">Fecha de inicio:</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date_str }}" required readonly>
+                            </div>
+                            <div class="form-group" style="font-family: Garamond, sans-serif; font-style: italic; font-size: 1.3em;">
+                                <label for="end_date">Fecha de fin:</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date_str }}" required readonly>
+                            </div>
+
+                        </div>
+                        <div class="form-group">
+                            <label for="cantidad_dias">Selecciona la opción de predicción:</label>
+                            <div>
+                                <input type="radio" id="opcion_1" name="cantidad_dias" value="1" required>
+                                <label for="opcion_1">1 día</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="opcion_5" name="cantidad_dias" value="5" required>
+                                <label for="opcion_5">5 días</label>
+                            </div>
+                        </div>
+                        <div id="popupConfirmacion" class="modal" style="display: none;">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h2>Confirmación</h2>
+                                <p>¿Estás seguro? Entre más lejano sea el tiempo de predicción, más errático es el resultado y la precisión baja considerablemente.</p>
+                                <button id="confirmarPrediccion" class="btn btn-outline-info">Confirmar</button>
+                                <button id="cancelarPrediccion" class="btn btn-outline-danger">Cancelar</button>
+                            </div>
+                        </div>
+            
+                        <input type="submit" class="btn btn-outline-info" value="Predecir acción">
+                    </form>
+                </div>
+            </div>
+        </div >
+            <button id="btnInfo" class="btn btn-outline-primary" style="margin-top: 10px; color: white;">Ver Información Adicional</button>
+        <div id="modalInfo" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Información Adicional Indicadores</h2>
+                <div id="infoContent">
+                    {% if 'sma' in selected_indicators %}
+                        <h3>SMA (Simple Moving Average)</h3>
+                        <p>La media móvil simple conocida por sus siglas SMA (Simple Moving Average, en inglés) es un indicador del análisis técnico de precios, el cual ayuda a identificar una tendencia actual y posibles cambios de tendencia en periodos de tiempo muy específicos</p>
+                    {% endif %}
+
+                    {% if 'ma' in selected_indicators %}
+                        <h3>MA (Moving Average)</h3>
+                        <p>Una media móvil es un valor calculado de manera continua de la media aritmética del precio durante un período de tiempo específico. 
+                            La función de una media móvil es suavizar las fluctuaciones de los precios. Esto nos ayuda a mirar más allá de las fluctuaciones transitorias o insignificantes en el precio, y en cambio, ver la tendencia a largo plazo del mercado.</p>
+
+                    {% endif %}
+                    {% if 'ema' in selected_indicators %}
+                        <h3>EMA (Moving Average)</h3>
+                        <p>La Media Móvil Exponencial (EMA, por sus siglas en inglés de Exponential Moving Average) es un tipo de media móvil, que asigna una ponderación diferente a cada precio. Este cálculo favorece a los precios más recientes al otorgarles un peso mayor y reduciendo de manera exponencial según se retrocede en el tiempo.
+                            La EMA en el trading se utiliza para suavizar los precios e identificar tendencias y cambios de tendencia.</p>
+
+                    {% endif %}
+                    {% if 'macd' in selected_indicators %}
+                        <h3>MACD (Moving Average)</h3>
+                        <p>MACD son las siglas en inglés de Moving Average Convergene Divergence. Como su propio nombre indica lo que mide el MACD es la convergencia y divergencia en el tiempo de dos medias móviles del precio de un activo. En otras palabras el MACD señala, en cada momento, la separación entre el valor de dos medias móviles con diferente período de cálculo.</p>
+
+                    {% endif %}
+                    {% if 'bb' in selected_indicators %}
+                        <h3>BB (Moving Average)</h3>
+                        <p>Las Bandas de Bollinger (Bollinger Bands en inglés) son un indicador de trading que mide la volatilidad del mercado y proporciona una gran cantidad de información muy útil para tomar decisiones de compra y venta de activos financieros. Fueron creadas por John Bollinger.
+                            Las bandas de Bollinger nos indican lo siguiente:
+                            
+                            Continuidad de la tendencia o reversión
+                            Periodos de consolidación del mercado
+                            Periodos de inminentes rupturas con una amplia volatilidad
+                            Posibles máximos o mínimos
+                            Objetivos potenciales del precio</p>
+
+                    {% endif %}
+                    {% if 'stddev' in selected_indicators %}
+                        <h3>STDDEV (Moving Average)</h3>
+                        <p>Desviación Estándar (StdDev) es un indicador técnico que se utiliza para determinar la tendencia y volatilidad del mercado. Este indicador mide el rango de fluctuaciones frente a la media móvil.</p>
+
+                    {% endif %}
+                </div>
+                </div>
+            </div>
+        </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("#fecha_info").show();
+    });
+
+    $(document).ready(function() {
+        // Mostrar el popup de confirmación cuando se selecciona "5 días"
+        $("#opcion_5").change(function() {
+            if ($(this).prop("checked")) {
+                $("#popupConfirmacion").show();
+            }
+        });
+    
+        // Ocultar el popup de confirmación cuando se selecciona "1 día"
+        $("#opcion_1").change(function() {
+            if ($(this).prop("checked")) {
+                $("#popupConfirmacion").hide();
+            }
+        });
+    
+
+        $("#confirmarPrediccion").click(function() {
+
+            $("#popupConfirmacion").hide();
+        });
+    
+
+        $("#cancelarPrediccion").click(function() {
+            $("#opcion_5").prop("checked", false);
+            $("#popupConfirmacion").hide();
+        });
+    });
+
+    $(document).ready(function() {
+        $('#btnPrediccion').click(function() {
+            $('#modalbtnPrediccion').show();
+        });
+
+        $('.close').click(function() {
+            $('#modalbtnPrediccion').hide();
+        });
+    });
+
+    $(document).ready(function() {
+        $('#btnConvertir').click(function() {
+            $('#modalConvertir').show();
+        });
+
+        $('.close').click(function() {
+            $('#modalConvertir').hide();
+        });
+    });
+    
+    $(document).ready(function() {
+      $('#btnInfo').click(function() {
+        $('#modalInfo').show();
+      });
+  
+      $('.close').click(function() {
+        $('#modalInfo').hide();
+      });
+    });
+    $(document).ready(function() {
+        $('#BorrarIndicadores').click(function(e) {
+            e.preventDefault(); 
+            $('#modalBorrar').show();
+        });
+
+        $('#confirmarBorrar').click(function() {
+            $('#modalBorrar').hide();
+
+        });
+
+        $('.close').click(function() {
+            $('#modalBorrar').hide();
+        });
+    });
+</script>
+
+<script>
+    var plotDiv = document.getElementById('myPlot');
+    var plotJson = JSON.parse('{{ plot_json|safe }}');
+    plotJson.layout.paper_bgcolor = '#1F2652';
+    // plotJson.layout.plot_bgcolor ='#E3E36F';
+    plotJson.layout.plot_bgcolor ='#E8E8E8';
+    plotJson.layout.autosize = true;
+    // var layout = {
+    //     width: 650, 
+    //     height: 500, 
+    // }; 
+    plotJson.layout.margin = {
+        l: 50,  // Margen izquierdo
+        r: 50,  // Margen derecho
+        t: 50,  // Margen superior
+        b: 50   // Margen inferior
+    };
+    
+    var config = {
+        responsive: true  // Hacer el gráfico responsive    
+    };
+
+    Plotly.newPlot(plotDiv, plotJson.data, plotJson.layout, config);
+    window.addEventListener('resize', function() {
+        Plotly.Plots.resize(plotDiv);
+    }); 
+</script>
+<script>
+    var formConvertir = document.getElementById('formConvertir');
+    formConvertir.addEventListener('submit', function(event) {
+        event.preventDefault(); // Evitar el envío del formulario por defecto
+        var url = formConvertir.getAttribute('action');
+        var data = new FormData(formConvertir);
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: data,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $('#resultado').html(response);
+            }
+        });
+    });
+
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.querySelector('#formPredecir');
+        var chartTypeSelect = document.querySelector('#chart_type');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var chartTypeValue = chartTypeSelect.value;
+            var formData = new FormData(this);
+            formData.append('chart_type', chartTypeValue);
+            // Envía una solicitud POST al servidor para obtener los datos de la predicción
+            fetch('/Predecir_accion', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Recibe los datos de la predicción y actualiza el gráfico en la página
+                var updatedPlot = JSON.parse(data.plot_json);
+                updatedPlot.layout.paper_bgcolor = '#192648';//ajuste de las configuracion que realice antes que no se integran en esta
+                updatedPlot.layout.autosize = true;
+                updatedPlot.layout.plot_bgcolor ='#E8E8E8';
+                updatedPlot.layout.margin = {
+                    l: 50,  // Margen izquierdo
+                    r: 50,  // Margen derecho
+                    t: 50,  // Margen superior
+                    b: 50   // Margen inferior
+                };
+                
+                Plotly.react('myPlot', updatedPlot.data, updatedPlot.layout);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+</script>
+{% endblock %}

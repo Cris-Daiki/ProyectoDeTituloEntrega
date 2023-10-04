@@ -1,0 +1,59 @@
+{% extends './layout.html' %}
+
+{% block title%} Noticias {% endblock %}
+
+{% block body %}
+<div class="container2">
+    <form method="POST" action="/buscar-noticias">
+        <h1>Buscar Noticias</h1>
+        <label for="keyword">Palabra clave:</label>
+        <input type="text" id="keyword" name="keyword" value="{{ keyword}}" required>
+        <br>
+        <label for="language" style="text-align: left;">Idioma:</label>
+        <select id="language" name="language" value = "{{ language }}">
+            <option value="en">Inglés</option>
+            <option value="es">Español</option>
+        </select>
+        <br>
+        <button type="submit">Buscar</button>
+    </form>
+</div>
+
+<h1 style="text-align: center; margin-top: 50px;">Resultados de la búsqueda</h1>
+
+<div class="noticias-container" id="noticias-container">
+    <div class="row">
+        {% for noticia in noticias %}
+            <div class="col-md-6 mb-3">
+                <div class="noticia rounded p-3 shadow-xl border">
+                    <h2 style="color: black;">{{ noticia.title }}</h2>
+                    {% if noticia.urlToImage %}
+                        <img src="{{ noticia.urlToImage }}" alt="Imagen de la noticia">
+                    {% else %}
+                        <p>No se encontró imagen para esta noticia</p>
+                    {% endif %}
+                    <p style="color: black;">{{ noticia.description }}</p>
+                    <p style="color: black;">Fecha de Publicación: {{ noticia.publishedAt }}</p>
+                    <a href="{{ noticia.url }}" target="_blank">Leer más</a>
+                    
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+
+        $.ajax({
+            url: '/cargar-noticias',  
+            method: 'GET',
+            success: function(data) {
+                $('#noticias-container').html(data);
+            },
+            error: function() {
+                console.log('Error al cargar las noticias.');
+            }
+        });
+    });
+</script>
+{% endblock %}
