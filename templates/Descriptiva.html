@@ -7,19 +7,22 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {% endblock %}
 {% block body %}
+
+
 <h1> Banco Santander</h1>
 <div class="container-fluid"  >
     <div class="row">
         <div class="col-lg-2 col-md-2 col-sm-12 testBorde" style="border-radius: 5px; display: flex;flex-direction: column;align-items: center;justify-content: center;" >
-            <form method="POST" action="/Descriptiva">
+            <form method="POST" id= "date_form"action="/Descriptiva">
                 <div class = "testBorde">
-                    <div class="form-group" style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.3em;">
+                    <div class="form-group" style="font-family: Garamond, sans-serif; font-style: italic; font-size: 1.3em;">
                         <label for="start_date">Fecha de inicio:</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date_str }}" required>
                     </div>
-                    <div class="form-group" style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.3em;">
+                    <div class="form-group" style="font-family: Garamond, sans-serif; font-style: italic; font-size: 1.3em;">
                         <label for="end_date">Fecha de Termino:</label>
                         <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date_str }}" required>
+                        <span id="date_error_message" style="color: red;"></span>
                     </div>
                     <div class="form-group" style="font-family:Garamond, sans-serif;font-style: italic; font-size: 1.3em;">
                         <label for="chart_type">Tipo de gráfico:</label>
@@ -72,6 +75,7 @@
                 </div>
                 <input type="submit" class="btn btn-outline-info" value="Generar Gráfico" style="margin-top: 1.5px;margin-bottom: 1.5px;">
                 <input type="submit" id="BorrarIndicadores" style="margin-top: 1.5px; margin-bottom: 1.5px;" name="BorrarIndicadores" class="btn btn-outline-danger" value="Borrar indicadores">
+
             </form>
             <div id="modalBorrar" class="modalBorrar" style="display: none;">
                 <div class="modal-content">
@@ -185,6 +189,7 @@
                     </form>
                 </div>
             </div>
+            
         </div >
             <button id="btnInfo" class="btn btn-outline-primary" style="margin-top: 10px; color: white;">Ver Información Adicional</button>
         <div id="modalInfo" class="modal" style="display: none;">
@@ -241,7 +246,18 @@
     $(document).ready(function() {
         $("#fecha_info").show();
     });
+    $(document).ready(function() {
+        $('#btnPrediccion').click(function() {
+            $('#modalbtnPrediccion').show();
+        });
 
+        $('.close').click(function() {
+            $('#modalbtnPrediccion').hide();
+        });
+        $('#formPredecir').submit(function() {
+            $('#modalbtnPrediccion').hide();
+        });
+    });
     $(document).ready(function() {
         // Mostrar el popup de confirmación cuando se selecciona "5 días"
         $("#opcion_5").change(function() {
@@ -261,24 +277,18 @@
         $("#confirmarPrediccion").click(function() {
 
             $("#popupConfirmacion").hide();
+            $('#modalbtnPrediccion').hide();
         });
     
 
         $("#cancelarPrediccion").click(function() {
+            console.log("Opción 5 seleccionada");
             $("#opcion_5").prop("checked", false);
             $("#popupConfirmacion").hide();
         });
     });
 
-    $(document).ready(function() {
-        $('#btnPrediccion').click(function() {
-            $('#modalbtnPrediccion').show();
-        });
-
-        $('.close').click(function() {
-            $('#modalbtnPrediccion').hide();
-        });
-    });
+    
 
     $(document).ready(function() {
         $('#btnConvertir').click(function() {
@@ -301,19 +311,23 @@
     });
     $(document).ready(function() {
         $('#BorrarIndicadores').click(function(e) {
-            e.preventDefault(); 
+            e.preventDefault();
             $('#modalBorrar').show();
         });
 
         $('#confirmarBorrar').click(function() {
+            // Establecer los indicadores como vacíos
+            $('input[name="indicators"]').prop('checked', false);
+            // Enviar el formulario
+            $('#date_form').submit();
             $('#modalBorrar').hide();
-
         });
 
         $('.close').click(function() {
             $('#modalBorrar').hide();
         });
     });
+
 </script>
 
 <script>
@@ -372,7 +386,7 @@
             var chartTypeValue = chartTypeSelect.value;
             var formData = new FormData(this);
             formData.append('chart_type', chartTypeValue);
-            // Envía una solicitud POST al servidor para obtener los datos de la predicción
+            // Enviar una solicitud POST al servidor para obtener los datos de la predicción
             fetch('/Predecir_accion', {
                 method: 'POST',
                 body: formData,
@@ -398,5 +412,35 @@
             });
         });
     });
+</script>
+<script>
+    const dateForm = document.getElementById("date_form");
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+    const errorMessage = document.getElementById("date_error_message");
+
+    dateForm.addEventListener("submit", function (event) {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        if (startDate > endDate || startDate.getTime() === endDate.getTime()) {
+            errorMessage.textContent = "Error: Las fechas no son válidas.";
+            event.preventDefault(); // Previene el envío del formulario
+        }
+    });
+
+    startDateInput.addEventListener("change", validateDateRange);
+    endDateInput.addEventListener("change", validateDateRange);
+
+    function validateDateRange() {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        if (startDate > endDate || startDate.getTime() === endDate.getTime()) {
+            errorMessage.textContent = "Error: Las fechas no son válidas.";
+        } else {
+            errorMessage.textContent = "";
+        }
+    }
 </script>
 {% endblock %}
