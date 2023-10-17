@@ -332,8 +332,15 @@ def predecir_accion():
     start_date = request.form['start_date']  
     end_date_str = request.form['end_date']
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+    
     end_date_nuevo = end_date + timedelta(days=1)
-    new_data = yf.download('BSAC', start=start_date, end=end_date_nuevo, interval='1d')
+
+    start_date_str = datetime.strptime(start_date, '%Y-%m-%d')
+    date_difference = end_date - start_date_str
+    if date_difference < timedelta(days=90):
+        start_date_str = end_date - timedelta(days=130)
+    new_data = yf.download('BSAC', start=start_date_str, end=end_date_nuevo, interval='1d')
+    New_data_2 = yf.download('BSAC', start=start_date, end=end_date_nuevo, interval='1d')
     global fig
         
     if cantidad_dias == 1:
@@ -358,7 +365,7 @@ def predecir_accion():
         #next_date = last_date + pd.DateOffset(days=1)
         predicted_df = pd.DataFrame({'Date': [next_date], 'Predicted': predicted_value[:, 0]})
         predicted_df['Date'] = pd.to_datetime(predicted_df['Date'])
-        fig = GraficarPredicciones1dia(new_data, predicted_df)
+        fig = GraficarPredicciones1dia(New_data_2, predicted_df)
         plot_json = fig.to_json()
         return jsonify({'plot_json': plot_json})
     if cantidad_dias == 5:
