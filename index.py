@@ -326,6 +326,15 @@ import plotly.express as px
 import pandas as pd
 
 from datetime import datetime, timedelta
+def get_next_weekday(date):
+    next_day = date + timedelta(days=1)
+    while next_day.weekday() >= 5:  # 5 y 6 representan sábado y domingo
+        next_day += timedelta(days=1)
+    return next_day
+def find_next_weekday(date):
+    while date.weekday() >= 5:  
+        date += timedelta(days=1)
+    return date
 @app.route('/Predecir_accion', methods=['POST'])
 def predecir_accion():
     cantidad_dias = int(request.form['cantidad_dias'])  # Obtener la opción seleccionada (1 o 5 días)
@@ -333,16 +342,24 @@ def predecir_accion():
     end_date_str = request.form['end_date']
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
     
-    end_date_nuevo = end_date + timedelta(days=1)
+    end_date_nuevo_1 = end_date + timedelta(days=1)
 
+    print("Primerendate",end_date_nuevo_1)
+    global fig
+    
+    end_date_nuevo = find_next_weekday(end_date)
+    print("Segundoendate",end_date_nuevo)
     start_date_str = datetime.strptime(start_date, '%Y-%m-%d')
     date_difference = end_date - start_date_str
     if date_difference < timedelta(days=90):
-        start_date_str = end_date - timedelta(days=130)
-    new_data = yf.download('BSAC', start=start_date_str, end=end_date_nuevo, interval='1d')
+        start_date_str = start_date_str - timedelta(days=90)
+
+    new_data = yf.download('BSAC', start=start_date_str, end=end_date_nuevo_1, interval='1d')
     New_data_2 = yf.download('BSAC', start=start_date, end=end_date_nuevo, interval='1d')
-    global fig
-        
+
+
+
+
     if cantidad_dias == 1:
         model = load_model('PruebaLSTM.keras')
         scaler = joblib.load('PruebaLSTMScaler.pkl')
@@ -354,18 +371,19 @@ def predecir_accion():
         predicted_value = model.predict(X_new)
         predicted_value = scaler.inverse_transform(predicted_value)
         last_date = new_data.index[-1]
-        if end_date_nuevo.weekday() == 5:
-            next_date = end_date_nuevo + pd.DateOffset(days=1)
-        elif end_date_nuevo.weekday() == 6:
-            next_date = end_date_nuevo + pd.DateOffset(days=0)
-        elif end_date_nuevo.weekday() == 4:
-            next_date = end_date_nuevo + pd.DateOffset(days=2)
-        else:
-            next_date = end_date_nuevo + pd.DateOffset(days=0)
-        #next_date = last_date + pd.DateOffset(days=1)
+        # if end_date_nuevo.weekday() == 5:
+        #     next_date = end_date_nuevo + pd.DateOffset(days=1)
+        # elif end_date_nuevo.weekday() == 6:
+        #     next_date = end_date_nuevo + pd.DateOffset(days=0)
+        # elif end_date_nuevo.weekday() == 4:
+        #     next_date = end_date_nuevo + pd.DateOffset(days=2)
+        # else:
+        #     next_date = end_date_nuevo + pd.DateOffset(days=0)
+        # next_date = last_date + pd.DateOffset(days=1)
+        next_date = find_next_weekday(end_date + timedelta(days=1))
         predicted_df = pd.DataFrame({'Date': [next_date], 'Predicted': predicted_value[:, 0]})
         predicted_df['Date'] = pd.to_datetime(predicted_df['Date'])
-        fig = GraficarPredicciones1dia(New_data_2, predicted_df)
+        fig = GraficarPredicciones1dia(new_data, predicted_df)
         plot_json = fig.to_json()
         return jsonify({'plot_json': plot_json})
     if cantidad_dias == 5:
@@ -373,16 +391,22 @@ def predecir_accion():
         scaler = joblib.load('PruebaLSTMScaler5Dias.pkl')
         scaled_data = scaler.transform(new_data['Close'].values.reshape(-1, 1))
         lookback = 80
-        X_input = scaled_data[-lookback:].reshape(1, lookback, 1)  
+        X_input = scaled_data[-lookback:].reshape(1, lookback, 1)
         predictions = model.predict(X_input)
         predictions = scaler.inverse_transform(predictions)
-        forecast_dates = pd.date_range(start=new_data.index[-1] + pd.Timedelta(days=1), periods=5, freq='D')
-        forecast_dates = forecast_dates.to_pydatetime()
-       
-        fig = GraficarPredicciones5dias(new_data,forecast_dates,predictions)
+        start_date_str = find_next_weekday(end_date + timedelta(days=1))
+    
+        # Generar las fechas de pronóstico para los próximos 5 días hábiles
+        forecast_dates = [start_date_str]
+        for _ in range(4):
+            next_day = get_next_weekday(forecast_dates[-1])
+            forecast_dates.append(next_day)
         
+        print(forecast_dates)
+        fig = GraficarPredicciones5dias(new_data, forecast_dates, predictions)
+
         plot_json = fig.to_json()
-        
+
         return jsonify({'plot_json': plot_json})
 
 def GraficarPredicciones5dias(new_data, forecast_dates,predictions):
