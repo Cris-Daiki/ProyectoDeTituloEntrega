@@ -73,8 +73,8 @@
                         </label>
                     </div>
                 </div>
-                <input type="submit" class="btn btn-outline-info" value="Generar Gráfico" style="margin-top: 1.5px;margin-bottom: 1.5px;">
-                <input type="submit" id="BorrarIndicadores" style="margin-top: 1.5px; margin-bottom: 1.5px;" name="BorrarIndicadores" class="btn btn-outline-danger" value="Borrar indicadores">
+                <input type="submit" class="btn btn-outline-info" value="Generar Gráfico" style="margin-top: 1.5px;margin-bottom: 1.5px;" onclick="this.disabled=true; this.form.submit();">
+                <input type="submit" id="BorrarIndicadores" style="margin-top: 1.5px; margin-bottom: 1.5px;" name="BorrarIndicadores" class="btn btn-outline-danger" value="Borrar indicadores" {% if not selected_indicators %}disabled{% endif %}>
 
             </form>
             <div id="modalBorrar" class="modalBorrar" style="display: none;">
@@ -209,18 +209,18 @@
 
                     {% endif %}
                     {% if 'ema' in selected_indicators %}
-                        <h3>EMA (Moving Average)</h3>
+                        <h3>EMA (Exponential Moving Average)</h3>
                         <p>La Media Móvil Exponencial (EMA, por sus siglas en inglés de Exponential Moving Average) es un tipo de media móvil, que asigna una ponderación diferente a cada precio. Este cálculo favorece a los precios más recientes al otorgarles un peso mayor y reduciendo de manera exponencial según se retrocede en el tiempo.
                             La EMA en el trading se utiliza para suavizar los precios e identificar tendencias y cambios de tendencia.</p>
 
                     {% endif %}
                     {% if 'macd' in selected_indicators %}
-                        <h3>MACD (Moving Average)</h3>
+                        <h3>MACD (Moving Average Convergene Divergence</h3>
                         <p>MACD son las siglas en inglés de Moving Average Convergene Divergence. Como su propio nombre indica lo que mide el MACD es la convergencia y divergencia en el tiempo de dos medias móviles del precio de un activo. En otras palabras el MACD señala, en cada momento, la separación entre el valor de dos medias móviles con diferente período de cálculo.</p>
 
                     {% endif %}
                     {% if 'bb' in selected_indicators %}
-                        <h3>BB (Moving Average)</h3>
+                        <h3>BB (Bollinger Bands)</h3>
                         <p>Las Bandas de Bollinger (Bollinger Bands en inglés) son un indicador de trading que mide la volatilidad del mercado y proporciona una gran cantidad de información muy útil para tomar decisiones de compra y venta de activos financieros. Fueron creadas por John Bollinger.
                             Las bandas de Bollinger nos indican lo siguiente:
                             
@@ -422,10 +422,16 @@
     dateForm.addEventListener("submit", function (event) {
         const startDate = new Date(startDateInput.value);
         const endDate = new Date(endDateInput.value);
+        const currentDate = new Date();
 
         if (startDate > endDate || startDate.getTime() === endDate.getTime()) {
             errorMessage.textContent = "Error: Las fechas no son válidas.";
             event.preventDefault(); // Previene el envío del formulario
+        }
+        if (endDate > currentDate) {
+            errorMessage.textContent = "La fecha final no puede ser mayor a la fecha actual.";
+            endDate = currentDate; 
+            endDateInput.valueAsDate = currentDate; // aqui actualizo el valor que puso el usuario 
         }
     });
 
@@ -435,10 +441,13 @@
     function validateDateRange() {
         const startDate = new Date(startDateInput.value);
         const endDate = new Date(endDateInput.value);
-
+        const currentDate = new Date();
         if (startDate > endDate || startDate.getTime() === endDate.getTime()) {
             errorMessage.textContent = "Error: Las fechas no son válidas.";
-        } else {
+        } else if (endDate > currentDate) {
+            errorMessage.textContent = "La fecha final no puede ser mayor a la fecha actual.";
+            endDateInput.valueAsDate = currentDate; 
+        }else {
             errorMessage.textContent = "";
         }
     }

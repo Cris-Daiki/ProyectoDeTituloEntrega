@@ -7,17 +7,17 @@ from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np 
 import joblib
-
-
+from datetime import timedelta
 app = Flask(__name__)
 global fig
 
 @app.route('/')
 def principal():
     return render_template('index.html')
-
+fechas_validas = []
 @app.route('/Descriptiva', methods=['GET', 'POST'])
 def obtenerinformaciongeneral():
+    global fechas_validas
     global FechaPrediccionInicial
     global FechaPreddicionFinal
     global fig 
@@ -25,7 +25,7 @@ def obtenerinformaciongeneral():
     today = dt.date.today()
     end_date1 = today.strftime('%Y-%m-%d')
     accion = 'BSAC'
-
+    
     if request.method == 'POST':
         
         start_date_str = request.form['start_date']
@@ -53,8 +53,11 @@ def obtenerinformaciongeneral():
         data = obtenerData(accion, start_date_str,end_date_str)
         
         fig = ConstruccionGrafico(data,chart_type)
-        
+        fechas_validas.append((start_date_str, end_date_str))
         if 'BorrarIndicadores' in request.form:
+            if fechas_validas:
+                start_date_str, end_date_str = fechas_validas[-1]
+            
             selected_indicators = []
         else:
             selected_indicators = ContruirIndicadores(data,start_date_str,end_date_str)
@@ -66,6 +69,8 @@ def obtenerinformaciongeneral():
     else:
         start_date_str = '2023-02-01'
         end_date_str = end_date1
+        if fechas_validas:
+            start_date_str, end_date_str = fechas_validas[-1]
         # FechaPrediccionInicial =start_date_str
         # FechaPreddicionFinal = end_date_str
         data2 = obtenerData(ticker, start_date_str,end_date_str)
