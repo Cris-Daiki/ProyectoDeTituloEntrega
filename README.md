@@ -9,6 +9,7 @@ pip install keras
 pip install tensorflow
 pip install pandas
 pip install plotly
+pip install scikit-learn
 o puedes usar pip install flask yfinance keras tensorflow pandas plotly boostrap
 luego tienes que reentrenar los modelos 
 el paso a seguir es:
