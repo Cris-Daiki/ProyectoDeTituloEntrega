@@ -31,24 +31,11 @@ def obtenerinformaciongeneral():
         start_date_str = request.form['start_date']
         end_date_str = request.form['end_date']
         
-        # if not start_date_str or not end_date_str:
-        #     return "Por favor, ingresa valores válidos para las fechas"
-        # if start_date_str > today.strftime('%Y-%m-%d'):
-        #     return "por favor, ingresa valores válidos para las fechas" # nota para mi //hacer esto una burbuja o algo asi
-        # if start_date_str == end_date_str:
-        #     return "por favor, ingresa valores válidos para las fechas"
-        # if start_date_str > end_date_str:
-        #     return "por favor, ingresa valores válidos para las fechas"
-        
         data1 = obtenerData(ticker, start_date_str,end_date_str)
         precio_inicial = data1['Close'][0]
         precio_actual = data1['Close'][-1]
         porcentaje = round((precio_actual - precio_inicial) / precio_inicial * 100, 2)
-        
-        
-        # start_date = dt.datetime.strptime(start_date_str, '%Y-%m-%d')
-        # end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d')
-        
+
         chart_type = request.form['chart_type'] 
         data = obtenerData(accion, start_date_str,end_date_str)
         
@@ -61,7 +48,7 @@ def obtenerinformaciongeneral():
             selected_indicators = []
         else:
             selected_indicators = ContruirIndicadores(data,start_date_str,end_date_str)
-        #selected_indicators = ContruirIndicadores(fig,data,start_date,end_date)
+
         
         plot_json = fig.to_json()
         
@@ -71,8 +58,7 @@ def obtenerinformaciongeneral():
         end_date_str = end_date1
         if fechas_validas:
             start_date_str, end_date_str = fechas_validas[-1]
-        # FechaPrediccionInicial =start_date_str
-        # FechaPreddicionFinal = end_date_str
+
         data2 = obtenerData(ticker, start_date_str,end_date_str)
         
         precio_inicial = data2['Close'][0]
@@ -90,8 +76,7 @@ def obtenerinformaciongeneral():
 
 
 def obtenerData(accion, start_date, end_date):
-    # if  isinstance(end_date, str):
-    #     return "end_date_str no es una cadena"
+
     end_date = datetime.strptime(end_date, '%Y-%m-%d')
     end_date_nuevo = end_date + timedelta(days=1)
     data =yf.download(accion, start_date, end_date_nuevo)
@@ -175,12 +160,7 @@ def ContruirIndicadores(data,start_date_indi,end_date_indi):
 
         fig.add_trace(go.Scatter(x=data.index, y=upper_band, name='STDDEVUB', line=dict(color='orange')))
         fig.add_trace(go.Scatter(x=data.index, y=lower_band, name='STDDEVLB', line=dict(color='orange')))
-    # if forecast is not None:
-    #     fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], name='Predicción', line=dict(color='purple')))
-    #fig.update_layout(
-        #width = 650,
-        #height=500
-    #)
+
     return indicadoresCalculados
 
 
@@ -298,8 +278,6 @@ def Procesesar_datos_usuario(symbol,inicio,fin):
         print(f'tcolumna {column}:{nans}')
     df_time_diffs = dataset.index.to_series().diff().dt.total_seconds() #al igual que los datos, se necesita que el tiempo entre datos sean los mismos, como estoy utilizando series de tiempo de un dia necesito que todos esten con un dia de distancia 
     print(df_time_diffs.value_counts())
-    #asi que tengo que corregir los registros que sean distintos a un dia 
-    #dataset.drop_duplicates(keep='first',inplace=True, ignore_index=False)#que nos deje el primer dato duplicado y que elimine los repetidos
 
     df2 =dataset.asfreq(freq='D',method='bfill')#reinterpolar el dataset para 1 dia 
     #cuando hay datos que no hay en el rango de un dia, se llena con el metodo bfill que toma el dato anterior y lo rellena 
@@ -376,15 +354,6 @@ def predecir_accion():
         predicted_value = model.predict(X_new)
         predicted_value = scaler.inverse_transform(predicted_value)
         last_date = new_data.index[-1]
-        # if end_date_nuevo.weekday() == 5:
-        #     next_date = end_date_nuevo + pd.DateOffset(days=1)
-        # elif end_date_nuevo.weekday() == 6:
-        #     next_date = end_date_nuevo + pd.DateOffset(days=0)
-        # elif end_date_nuevo.weekday() == 4:
-        #     next_date = end_date_nuevo + pd.DateOffset(days=2)
-        # else:
-        #     next_date = end_date_nuevo + pd.DateOffset(days=0)
-        # next_date = last_date + pd.DateOffset(days=1)
         next_date = find_next_weekday(end_date + timedelta(days=1))
         predicted_df = pd.DataFrame({'Date': [next_date], 'Predicted': predicted_value[:, 0]})
         predicted_df['Date'] = pd.to_datetime(predicted_df['Date'])
